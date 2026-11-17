@@ -202,6 +202,9 @@ td a { color: var(--fg); font-weight: 600; text-decoration: none; font-variant-n
 .fb:first-child { border-top: 0; }
 .fb b { font-size: 13.5px; }
 .fb p { margin: 2px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.exrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--line); }
+.exrow:first-child { border-top: 0; padding-top: 0; }
+.exrow b { font-size: 15px; }
 @media (prefers-reduced-motion: reduce) { .sos:active { transform: none; } }
 html{-webkit-text-size-adjust:100%}
 body{margin:0}
@@ -312,16 +315,14 @@ body{margin:0}
         <section class="card">
           <h2>Organizational chart</h2>
           <p class="sub-t">Who is behind Tapline.</p>
-          <div class="org" role="img" aria-label="Organizational chart: project adviser, project lead, and four team members">
-            <div class="node top"><b>Project adviser</b><span>Your teacher</span></div>
-            <div class="vline"></div>
-            <div class="node"><b>Project lead</b><span>Name to be added</span></div>
+          <div class="org" role="img" aria-label="Organizational chart: Lea Kim Del Castillo as project lead, with four team members">
+            <div class="node top"><b>Lea Kim Del Castillo</b><span>Project lead</span></div>
             <div class="vline"></div>
             <div class="members">
-              <div class="node"><b>Developer</b><span>Name to be added</span></div>
-              <div class="node"><b>Designer</b><span>Name to be added</span></div>
-              <div class="node"><b>Researcher</b><span>Name to be added</span></div>
-              <div class="node"><b>Presenter</b><span>Name to be added</span></div>
+              <div class="node"><b>Juan Dela Cruz</b><span>Developer</span></div>
+              <div class="node"><b>Maria Santos</b><span>Designer</span></div>
+              <div class="node"><b>Jose Reyes</b><span>Researcher</span></div>
+              <div class="node"><b>Ana Garcia</b><span>Presenter</span></div>
             </div>
           </div>
         </section>
@@ -348,7 +349,8 @@ body{margin:0}
       <div class="stack" data-page="activities">
         <section class="card">
           <h2>Activities</h2>
-          <div class="empty">Nothing here yet.</div>
+          <p class="sub-t">Each link opens the activity in a new tab.</p>
+          <div id="actList"></div>
         </section>
       </div>
 
@@ -356,7 +358,8 @@ body{margin:0}
       <div class="stack" data-page="exercises">
         <section class="card">
           <h2>Exercises</h2>
-          <div class="empty">Nothing here yet.</div>
+          <p class="sub-t">Each link opens the exercise in a new tab.</p>
+          <div id="exList"></div>
         </section>
       </div>
 
@@ -685,6 +688,54 @@ body{margin:0}
     box.appendChild(opts); box.appendChild(fb); box.appendChild(next);
   }
 
+  /* ---------- exercises (linked files) ---------- */
+  var BASE = "https://leakimdc.github.io/Tapline/";
+  var EXES = [
+    [1, ["exe1_del castillo.html"]],
+    [2, ["exe2_del castillo.html"]],
+    [3, ["exe3_del castillo.html"]],
+    [4, ["exe4_del castillo.html"]],
+    [5, ["exe5_del castillo.html", "exe5_1_del castillo.html"]],
+    [6, ["exe6_del castillo.html", "exe6_1_del castillo.html"]],
+    [7, ["exe7_del castillo.html", "exe7_1_del castillo.html"]],
+    [8, ["exe8_del castillo.html", "exe8_1_del castillo.html"]]
+  ];
+  function buildExercises() {
+    var box = $("exList");
+    EXES.forEach(function (e) {
+      var row = h("div", "exrow"); row.appendChild(h("b", "", "Exercise " + e[0]));
+      var btns = h("div", "row");
+      e[1].forEach(function (f, i) {
+        var a = h("a", "btn", e[1].length > 1 ? "Part " + (i + 1) : "Open");
+        a.href = BASE + encodeURIComponent(f); a.target = "_blank"; a.rel = "noopener";
+        btns.appendChild(a);
+      });
+      row.appendChild(btns); box.appendChild(row);
+    });
+  }
+
+  /* ---------- activities (linked files) ---------- */
+  var ACTS = [
+    [1, ["act1_del castillo.html"]],
+    [2, ["act2_del castillo.html"]],
+    [3, ["act3_del castillo.html"]],
+    [4, ["act4_del castillo.html"]],
+    [5, ["act5_del castillo.html"]]
+  ];
+  function buildActivityLinks() {
+    var box = $("actList");
+    ACTS.forEach(function (e) {
+      var row = h("div", "exrow"); row.appendChild(h("b", "", "Activity " + e[0]));
+      var btns = h("div", "row");
+      e[1].forEach(function (f) {
+        var a = h("a", "btn", "Open");
+        a.href = BASE + encodeURIComponent(f); a.target = "_blank"; a.rel = "noopener";
+        btns.appendChild(a);
+      });
+      row.appendChild(btns); box.appendChild(row);
+    });
+  }
+
   /* ---------- feedback ---------- */
   function readFeedback() { try { var a = JSON.parse(localStorage.getItem(FBKEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
   function renderFeedback() {
@@ -766,7 +817,7 @@ body{margin:0}
     window.addEventListener("hashchange", route);
   }
 
-  buildSelect(); buildNav(); buildDirectory();
+  buildSelect(); buildNav(); buildDirectory(); buildExercises(); buildActivityLinks();
   load(); syncInputs(); bind(); renderHome(); route();
 })();
 </script>
