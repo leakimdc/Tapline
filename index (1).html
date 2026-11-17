@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tapline Emergency</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Layout: top menu from the class whiteboard. Home is one narrow call column; other pages are content on the left with a quick-call sidebar on the right. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --fg: #14181d;
+  --muted: #566170;
+  --line: #d6dce3;
+  --sos: #c8102e;
+  --sos-fg: #ffffff;
+  --sos-soft: #fbe9ec;
+  --ok: #17794a;
+  --warn: #8a5a00;
+  --focus: #0b5fd6;
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1216; --surface: #171d23; --fg: #eef1f4; --muted: #9aa6b3; --line: #2a333c;
+    --sos: #d92a45; --sos-fg: #ffffff; --sos-soft: #2a1519; --ok: #4cc58a; --warn: #e0b04a; --focus: #7db2ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1216; --surface: #171d23; --fg: #eef1f4; --muted: #9aa6b3; --line: #2a333c;
+  --sos: #d92a45; --sos-fg: #ffffff; --sos-soft: #2a1519; --ok: #4cc58a; --warn: #e0b04a; --focus: #7db2ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.5;
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -0.01em; margin: 0; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+  padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+}
+.chip.done { color: var(--ok); }
+.chip.next { color: var(--warn); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.chip.off .dot { background: var(--warn); }
+
+/* Menu */
+nav.main { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--line); }
+nav.main a {
+  padding: 10px 11px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none;
+  border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap;
+}
+nav.main a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--sos); }
+nav.sub { display: flex; gap: 8px; flex-wrap: wrap; }
+nav.sub a {
+  padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; text-decoration: none;
+  color: var(--muted); border: 1px solid var(--line); background: var(--surface);
+}
+nav.sub a[aria-current="page"] { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+
+/* Page layout */
+.layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.layout.has-aside aside { order: -1; }
+@media (min-width: 860px) {
+  .layout.has-aside { grid-template-columns: minmax(0, 1fr) 260px; }
+  .layout.has-aside aside { order: 0; position: sticky; top: 12px; }
+}
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.home-col { max-width: 680px; width: 100%; margin: 0 auto; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+h2 { font-family: var(--font-display); font-size: 19px; margin: 0 0 4px; letter-spacing: -0.005em; }
+h3 { font-family: var(--font-display); font-size: 15px; margin: 0 0 4px; }
+.sub-t { color: var(--muted); margin: 0 0 14px; font-size: 13.5px; }
+p { margin: 0 0 10px; }
+.prose { max-width: 62ch; }
+
+/* Primary call */
+.hero { display: flex; flex-direction: column; gap: 12px; }
+.where { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sos {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 170px; border-radius: 16px; text-decoration: none;
+  background: var(--sos); color: var(--sos-fg); text-align: center; padding: 18px; width: 100%;
+}
+.sos:active { transform: scale(0.99); }
+.sos .lbl { font-size: 15px; font-weight: 600; opacity: 0.95; }
+.sos .num { font-family: var(--font-display); font-weight: 700; font-size: clamp(56px, 18vw, 92px); line-height: 1; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.sos .go { font-size: 13px; font-weight: 500; opacity: 0.92; }
+.sos[aria-disabled="true"] { background: var(--line); color: var(--muted); pointer-events: none; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+button, .btn {
+  font: inherit; font-weight: 600; cursor: pointer; min-height: 44px; padding: 0 16px;
+  border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button.quiet { color: var(--muted); font-weight: 500; }
+
+.svcs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.svc {
+  flex-direction: column; align-items: flex-start; justify-content: center; gap: 0;
+  min-height: 72px; padding: 10px 14px; border-radius: 12px; background: var(--sos-soft); border: 1px solid var(--line); color: var(--fg);
+}
+.svc .t { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.svc .n { font-family: var(--font-display); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.person .who { min-width: 0; }
+.person .who b { display: block; font-size: 16px; overflow-wrap: anywhere; }
+.person .who span { color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.callp { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.empty { border: 1px dashed var(--line); border-radius: 12px; padding: 14px; color: var(--muted); font-size: 13.5px; }
+
+form { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.f.full { grid-column: 1 / -1; }
+label { font-size: 13px; font-weight: 600; }
+input, select, textarea {
+  font: inherit; min-height: 44px; padding: 0 12px; border-radius: 10px; width: 100%;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+}
+textarea { padding: 10px 12px; min-height: 110px; resize: vertical; }
+.divider { grid-column: 1 / -1; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
+.status { font-size: 13px; color: var(--muted); }
+.status.ok { color: var(--ok); }
+.status.warn { color: var(--warn); }
+.fine { font-size: 12.5px; color: var(--muted); margin: 0; }
+@media (max-width: 520px) { form { grid-template-columns: 1fr; } }
+
+/* Sidebar quick call */
+.qc { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.qc .where { margin: 0; }
+.qc .qcall {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px; text-decoration: none;
+  background: var(--sos); color: var(--sos-fg); border-radius: 12px; padding: 12px 14px; min-height: 56px;
+}
+.qc .qcall span { font-weight: 600; font-size: 14px; }
+.qc .qcall b { font-family: var(--font-display); font-size: 28px; font-variant-numeric: tabular-nums; }
+.qc .qcall[aria-disabled="true"] { background: var(--line); color: var(--muted); pointer-events: none; }
+.qc .qperson { min-height: 44px; font-size: 14px; }
+
+/* Content pages */
+.seq { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.seq li { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.seq li:first-child { border-top: 0; }
+.seq .when { font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+@media (max-width: 520px) { .seq li { grid-template-columns: 1fr; gap: 2px; } }
+
+.org { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.node { border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; text-align: center; background: var(--bg); min-width: 150px; max-width: 100%; }
+.node b { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.node span { font-size: 12.5px; color: var(--muted); }
+.node.top { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.node.top span { color: var(--bg); opacity: 0.8; }
+.vline { width: 2px; height: 20px; background: var(--line); }
+.members { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; padding-top: 0; }
+
+dl.kv { display: grid; grid-template-columns: 150px 1fr; gap: 0; margin: 0; }
+dl.kv dt, dl.kv dd { margin: 0; padding: 10px 0; border-top: 1px solid var(--line); }
+dl.kv dt { color: var(--muted); font-size: 13px; font-weight: 600; }
+dl.kv dt:first-of-type, dl.kv dt:first-of-type + dd { border-top: 0; }
+@media (max-width: 520px) { dl.kv { grid-template-columns: 1fr; } dl.kv dd { border-top: 0; padding-top: 0; } }
+
+.grid2 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.act { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; background: var(--bg); }
+.act .chip { align-self: flex-start; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: var(--bg); }
+td a { color: var(--fg); font-weight: 600; text-decoration: none; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); }
+.others { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+
+.quiz-opts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); margin: 12px 0; }
+.quiz-opts button { font-family: var(--font-display); font-size: 22px; font-variant-numeric: tabular-nums; min-height: 56px; }
+.quiz-opts button.right { background: var(--ok); color: #fff; border-color: var(--ok); }
+.quiz-opts button.wrong { background: var(--sos); color: #fff; border-color: var(--sos); }
+.qtext { font-size: 17px; font-weight: 600; margin: 4px 0; }
+.score { font-family: var(--font-display); font-size: 44px; font-weight: 700; margin: 4px 0 8px; }
+
+.fb { border-top: 1px solid var(--line); padding: 10px 0; }
+.fb:first-child { border-top: 0; }
+.fb b { font-size: 13.5px; }
+.fb p { margin: 2px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (prefers-reduced-motion: reduce) { .sos:active { transform: none; } }
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1 class="brand">Tapline</h1>
+    <div class="chips">
+      <span class="chip" id="net"><span class="dot"></span><span id="netTxt">Online</span></span>
+      <span class="chip" id="saveChip">Not saved yet</span>
+    </div>
+  </header>
+
+  <nav class="main" id="mainNav" aria-label="Main menu"></nav>
+  <nav class="sub" id="subNav" aria-label="Section pages" hidden></nav>
+
+  <div class="layout" id="layout">
+    <main class="stack" id="main">
+
+      <!-- HOME -->
+      <div class="stack home-col" data-page="home">
+        <section class="card hero" aria-label="Emergency call">
+          <div class="where" id="where"></div>
+          <a class="sos" id="sos" href="#home"><span class="lbl" id="sosLbl"></span><span class="num" id="sosNum"></span><span class="go">Tap to call</span></a>
+          <div class="row">
+            <button type="button" id="copyMain">Copy number</button>
+            <p class="hint" id="copyMsg" aria-live="polite">Calls use your phone network, so no internet is needed.</p>
+          </div>
+          <p class="hint">If tapping does nothing on this screen, dial the number shown above on your phone.</p>
+        </section>
+
+        <section class="card" id="moreCard" aria-label="Other emergency lines" hidden>
+          <h2>Other emergency lines</h2>
+          <p class="sub-t">This country has separate numbers. Use the one that matches your emergency.</p>
+          <div class="svcs" id="svcs"></div>
+        </section>
+
+        <section class="card" aria-label="Personal contact">
+          <h2>Your contact</h2>
+          <p class="sub-t">Someone you want one tap away, such as family or a neighbor.</p>
+          <div id="personBox"></div>
+        </section>
+
+        <section class="card" aria-label="Setup">
+          <h2>Setup</h2>
+          <p class="sub-t">Pick once and save. Tapline remembers it on this device and opens ready to call.</p>
+          <form id="form" autocomplete="off">
+            <div class="f full">
+              <label for="country">Country</label>
+              <select id="country"></select>
+            </div>
+            <div class="f" id="customLblBox" hidden>
+              <label for="customLbl">Label</label>
+              <input id="customLbl" type="text" maxlength="30" placeholder="Emergency">
+            </div>
+            <div class="f" id="customNumBox" hidden>
+              <label for="customNum">Number to call</label>
+              <input id="customNum" type="tel" inputmode="tel" maxlength="20" placeholder="e.g. 911">
+            </div>
+            <hr class="divider">
+            <div class="f">
+              <label for="cName">Contact name</label>
+              <input id="cName" type="text" maxlength="40" placeholder="Mom">
+            </div>
+            <div class="f">
+              <label for="cNum">Contact number</label>
+              <input id="cNum" type="tel" inputmode="tel" maxlength="22" placeholder="+63 912 345 6789">
+            </div>
+            <div class="f full">
+              <div class="row">
+                <button type="submit" class="primary" id="saveBtn">Save setup</button>
+                <button type="button" class="quiet" id="resetBtn">Clear saved setup</button>
+                <span class="status" id="status" aria-live="polite"></span>
+              </div>
+            </div>
+          </form>
+        </section>
+        <p class="fine">Emergency numbers are listed from general public knowledge and can change. Confirm the number for where you are before you rely on it. In many countries, 112 also reaches emergency services from a mobile phone.</p>
+      </div>
+
+      <!-- ABOUTS: HISTORY -->
+      <div class="stack" data-page="history">
+        <section class="card">
+          <h2>History</h2>
+          <p class="sub-t">Where Tapline came from.</p>
+          <div class="prose">
+            <p>In an emergency, every second counts, yet people often have to remember the right number for the place they are in and type it in by hand. Countries use different numbers, and some have separate ones for police, fire and ambulance.</p>
+            <p>Tapline started from a simple idea: set up the call once, then reach help with a single tap. The user picks a country, adds a personal contact for someone close, and saves the setup so nothing has to be adjusted again.</p>
+          </div>
+        </section>
+        <section class="card">
+          <h3>Timeline</h3>
+          <ol class="seq">
+            <li><span class="when">The idea</span><div>One tap to the right emergency number, with a saved country and a personal contact.</div></li>
+            <li><span class="when">Planning</span><div>Menu and pages sketched on the whiteboard: Home, Abouts, Portfolio, Services and Contacts.</div></li>
+            <li><span class="when">Nov 2026</span><div>First working prototype with the country list, saved setup and personal contact.</div></li>
+            <li><span class="when">Next</span><div>An installable phone app that opens fully offline.</div></li>
+          </ol>
+        </section>
+      </div>
+
+      <!-- ABOUTS: ORG CHART -->
+      <div class="stack" data-page="org-chart">
+        <section class="card">
+          <h2>Organizational chart</h2>
+          <p class="sub-t">Who is behind Tapline.</p>
+          <div class="org" role="img" aria-label="Organizational chart: project adviser, project lead, and four team members">
+            <div class="node top"><b>Project adviser</b><span>Your teacher</span></div>
+            <div class="vline"></div>
+            <div class="node"><b>Project lead</b><span>Name to be added</span></div>
+            <div class="vline"></div>
+            <div class="members">
+              <div class="node"><b>Developer</b><span>Name to be added</span></div>
+              <div class="node"><b>Designer</b><span>Name to be added</span></div>
+              <div class="node"><b>Researcher</b><span>Name to be added</span></div>
+              <div class="node"><b>Presenter</b><span>Name to be added</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ABOUTS: PROFILE -->
+      <div class="stack" data-page="profile">
+        <section class="card">
+          <h2>Profile</h2>
+          <p class="sub-t">Tapline at a glance.</p>
+          <dl class="kv">
+            <dt>Name</dt><dd>Tapline</dd>
+            <dt>What it is</dt><dd>A website that can grow into a phone app for faster emergency help.</dd>
+            <dt>What it does</dt><dd>Calls the emergency number for your country with one tap, plus one personal contact of your choice.</dd>
+            <dt>Who it is for</dt><dd>Anyone who may need to reach emergency services quickly, including when they travel.</dd>
+            <dt>Works offline</dt><dd>Yes. The numbers are stored in the page and calls use the phone network.</dd>
+            <dt>Built with</dt><dd>HTML, CSS and JavaScript</dd>
+            <dt>Version</dt><dd>Prototype, November 2026</dd>
+          </dl>
+        </section>
+      </div>
+
+      <!-- PORTFOLIO: ACTIVITIES -->
+      <div class="stack" data-page="activities">
+        <section class="card">
+          <h2>Activities</h2>
+          <div class="empty">Nothing here yet.</div>
+        </section>
+      </div>
+
+      <!-- PORTFOLIO: EXERCISES -->
+      <div class="stack" data-page="exercises">
+        <section class="card">
+          <h2>Exercises</h2>
+          <div class="empty">Nothing here yet.</div>
+        </section>
+      </div>
+
+      <!-- SERVICES -->
+      <div class="stack" data-page="services">
+        <section class="card">
+          <h2>Services</h2>
+          <p class="sub-t">What Tapline offers.</p>
+          <div class="grid2">
+            <div class="act"><h3>One-tap emergency call</h3><p class="hint">The main number for your country behind one large button.</p></div>
+            <div class="act"><h3>Country directory</h3><p class="hint">Police, fire and ambulance numbers where a country has separate lines.</p></div>
+            <div class="act"><h3>Personal contact</h3><p class="hint">One extra number for someone you trust, always a tap away.</p></div>
+            <div class="act"><h3>Saved setup</h3><p class="hint">Choose your country once. Tapline remembers it on this device.</p></div>
+            <div class="act"><h3>Works offline</h3><p class="hint">No internet needed to see the numbers or place a call.</p></div>
+          </div>
+        </section>
+        <section class="card">
+          <h3>Emergency number directory</h3>
+          <p class="sub-t">Tap a number to call it.</p>
+          <div class="f" style="margin-bottom:12px">
+            <label for="dirFilter">Find a country</label>
+            <input id="dirFilter" type="search" placeholder="Type a country name">
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th scope="col">Country</th><th scope="col">Main</th><th scope="col">Other lines</th></tr></thead>
+              <tbody id="dirBody"></tbody>
+            </table>
+          </div>
+          <p class="fine" id="dirEmpty" hidden style="margin-top:10px">No country matches that name.</p>
+        </section>
+      </div>
+
+      <!-- CONTACTS -->
+      <div class="stack" data-page="contacts">
+        <section class="card">
+          <h2>Feedbacks / Contacts</h2>
+          <p class="sub-t">Tell the team what works and what does not.</p>
+          <form id="fbForm" autocomplete="off">
+            <div class="f full">
+              <label for="fbName">Your name (optional)</label>
+              <input id="fbName" type="text" maxlength="40">
+            </div>
+            <div class="f full">
+              <label for="fbMsg">Feedback</label>
+              <textarea id="fbMsg" maxlength="600" placeholder="What would make Tapline faster or clearer?"></textarea>
+            </div>
+            <div class="f full">
+              <div class="row">
+                <button type="submit" class="primary">Save feedback</button>
+                <span class="status" id="fbStatus" aria-live="polite"></span>
+              </div>
+              <p class="fine">Feedback is kept on this device only and is not sent anywhere yet.</p>
+            </div>
+          </form>
+        </section>
+        <section class="card" id="fbCard" hidden>
+          <h3>Saved on this device</h3>
+          <div id="fbList"></div>
+        </section>
+        <section class="card">
+          <h3>Contact the team</h3>
+          <dl class="kv">
+            <dt>Team</dt><dd>Name to be added</dd>
+            <dt>School</dt><dd>Name to be added</dd>
+            <dt>Email</dt><dd>Address to be added</dd>
+          </dl>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  // [code, country, main [label, number], other lines]
+  var D = [
+    ["AR","Argentina",["Emergency","911"],[]],
+    ["AU","Australia",["Emergency","000"],[["Mobile alternative","112"]]],
+    ["BR","Brazil",["Police","190"],[["Fire","193"],["Ambulance","192"]]],
+    ["CA","Canada",["Emergency","911"],[]],
+    ["CL","Chile",["Police","133"],[["Fire","132"],["Ambulance","131"]]],
+    ["CN","China",["Police","110"],[["Fire","119"],["Ambulance","120"]]],
+    ["CO","Colombia",["Emergency","123"],[]],
+    ["EU","European Union (anywhere)",["Emergency","112"],[]],
+    ["FR","France",["Emergency","112"],[["Police","17"],["Fire","18"],["Ambulance","15"]]],
+    ["DE","Germany",["Fire / Ambulance","112"],[["Police","110"]]],
+    ["HK","Hong Kong",["Emergency","999"],[]],
+    ["IN","India",["Emergency","112"],[["Police","100"],["Fire","101"],["Ambulance","102"]]],
+    ["ID","Indonesia",["Emergency","112"],[["Police","110"],["Fire","113"]]],
+    ["IE","Ireland",["Emergency","112"],[["Also works","999"]]],
+    ["IL","Israel",["Police","100"],[["Ambulance","101"],["Fire","102"]]],
+    ["IT","Italy",["Emergency","112"],[["Police","113"],["Fire","115"],["Ambulance","118"]]],
+    ["JP","Japan",["Fire / Ambulance","119"],[["Police","110"]]],
+    ["KE","Kenya",["Emergency","999"],[["Also works","112"]]],
+    ["MY","Malaysia",["Emergency","999"],[["Mobile alternative","112"]]],
+    ["MX","Mexico",["Emergency","911"],[]],
+    ["NL","Netherlands",["Emergency","112"],[]],
+    ["NZ","New Zealand",["Emergency","111"],[]],
+    ["NG","Nigeria",["Emergency","112"],[]],
+    ["NO","Norway",["Police","112"],[["Fire","110"],["Ambulance","113"]]],
+    ["PE","Peru",["Police","105"],[["Fire","116"],["Ambulance","106"]]],
+    ["PH","Philippines",["Emergency","911"],[]],
+    ["PL","Poland",["Emergency","112"],[["Police","997"],["Fire","998"],["Ambulance","999"]]],
+    ["PT","Portugal",["Emergency","112"],[]],
+    ["RU","Russia",["Emergency","112"],[["Police","102"],["Fire","101"],["Ambulance","103"]]],
+    ["SA","Saudi Arabia",["Emergency","911"],[]],
+    ["SG","Singapore",["Police","999"],[["Fire / Ambulance","995"]]],
+    ["ZA","South Africa",["Emergency (mobile)","112"],[["Police","10111"],["Ambulance","10177"]]],
+    ["KR","South Korea",["Fire / Ambulance","119"],[["Police","112"]]],
+    ["ES","Spain",["Emergency","112"],[]],
+    ["SE","Sweden",["Emergency","112"],[]],
+    ["CH","Switzerland",["Emergency","112"],[["Police","117"],["Fire","118"],["Ambulance","144"]]],
+    ["TW","Taiwan",["Fire / Ambulance","119"],[["Police","110"]]],
+    ["TH","Thailand",["Police","191"],[["Fire","199"],["Ambulance","1669"]]],
+    ["TR","Turkey",["Emergency","112"],[]],
+    ["UA","Ukraine",["Emergency","112"],[]],
+    ["AE","United Arab Emirates",["Police","999"],[["Ambulance","998"],["Fire","997"]]],
+    ["GB","United Kingdom",["Emergency","999"],[["Also works","112"]]],
+    ["US","United States",["Emergency","911"],[]],
+    ["VN","Vietnam",["Police","113"],[["Fire","114"],["Ambulance","115"]]]
+  ];
+
+  // Menu from the whiteboard: [first page, menu label, pages in the section]
+  var PAGES = {
+    "home": "Home", "history": "History", "org-chart": "Organizational chart", "profile": "Profile",
+    "activities": "Activities", "exercises": "Exercises", "services": "Services", "contacts": "Feedbacks / Contacts"
+  };
+  var GROUPS = [
+    ["home", "Home", ["home"]],
+    ["history", "Abouts", ["history", "org-chart", "profile"]],
+    ["activities", "Portfolio", ["activities", "exercises"]],
+    ["services", "Services", ["services"]],
+    ["contacts", "Contacts", ["contacts"]]
+  ];
+
+  var KEY = "tapline.setup.v1", FBKEY = "tapline.feedback.v1";
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { country: "US", customLbl: "", customNum: "", cName: "", cNum: "" };
+  var savedSnapshot = null;
+  var currentPage = "home";
+
+  function dial(s) { return String(s || "").replace(/[^\d+*#]/g, ""); }
+  function find(code) { for (var i = 0; i < D.length; i++) if (D[i][0] === code) return D[i]; return null; }
+  function h(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ---------- saved setup ---------- */
+  function defaultCountry() {
+    try {
+      var l = (navigator.language || "").split("-")[1];
+      if (l && find(l.toUpperCase())) return l.toUpperCase();
+    } catch (e) {}
+    return "US";
+  }
+  function load() {
+    state.country = defaultCountry();
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (o && typeof o === "object") {
+          state.country = (o.country === "CUSTOM" || find(o.country)) ? o.country : state.country;
+          ["customLbl", "customNum", "cName", "cNum"].forEach(function (k) { state[k] = typeof o[k] === "string" ? o[k] : ""; });
+          savedSnapshot = JSON.stringify(state);
+        }
+      }
+    } catch (e) {}
+  }
+  function current() {
+    if (state.country === "CUSTOM") {
+      return { name: "Custom number", main: [state.customLbl.trim() || "Emergency", dial(state.customNum)], more: [] };
+    }
+    var d = find(state.country);
+    return { name: d[1], main: d[2], more: d[3] };
+  }
+
+  function renderHome() {
+    var c = current();
+    $("where").textContent = c.name;
+    var sos = $("sos");
+    var ok = c.main[1].length > 0;
+    $("sosLbl").textContent = ok ? "Call " + c.main[0] : "No number set";
+    $("sosNum").textContent = ok ? c.main[1] : "—";
+    sos.setAttribute("href", ok ? "tel:" + dial(c.main[1]) : "#home");
+    sos.setAttribute("aria-disabled", ok ? "false" : "true");
+    $("copyMain").disabled = !ok;
+
+    var svcs = $("svcs"); svcs.textContent = "";
+    c.more.forEach(function (s) {
+      var a = h("a", "btn svc"); a.href = "tel:" + dial(s[1]);
+      a.appendChild(h("span", "t", s[0])); a.appendChild(h("span", "n", s[1])); svcs.appendChild(a);
+    });
+    $("moreCard").hidden = c.more.length === 0;
+
+    var box = $("personBox"); box.textContent = "";
+    var pn = dial(state.cNum);
+    var pname = state.cName.trim() || "Personal contact";
+    if (pn) {
+      var wrap = h("div", "person"); var who = h("div", "who");
+      who.appendChild(h("b", "", pname)); who.appendChild(h("span", "", state.cNum.trim()));
+      var call = h("a", "btn callp", "Call " + (state.cName.trim() || "contact")); call.href = "tel:" + pn;
+      wrap.appendChild(who); wrap.appendChild(call); box.appendChild(wrap);
+    } else {
+      box.appendChild(h("div", "empty", "No contact yet. Add a name and number under Setup, then save."));
+    }
+
+    var cu = state.country === "CUSTOM";
+    $("customLblBox").hidden = !cu; $("customNumBox").hidden = !cu;
+
+    var dirty = savedSnapshot !== JSON.stringify(state);
+    var chip = $("saveChip");
+    if (savedSnapshot === null) chip.textContent = "Not saved yet";
+    else chip.textContent = dirty ? "Unsaved changes" : "Saved on this device";
+    var st = $("status");
+    if (dirty && savedSnapshot !== null) { st.textContent = "Changes not saved"; st.className = "status warn"; }
+    else if (!dirty) { st.className = "status ok"; }
+  }
+
+  function buildSelect() {
+    var s = $("country");
+    D.forEach(function (d) { var o = h("option", "", d[1]); o.value = d[0]; s.appendChild(o); });
+    var o = h("option", "", "Other (enter a number)"); o.value = "CUSTOM"; s.appendChild(o);
+  }
+  function syncInputs() {
+    $("country").value = state.country;
+    $("customLbl").value = state.customLbl; $("customNum").value = state.customNum;
+    $("cName").value = state.cName; $("cNum").value = state.cNum;
+  }
+
+  /* ---------- directory ---------- */
+  function buildDirectory() {
+    var body = $("dirBody");
+    D.forEach(function (d) {
+      var tr = h("tr"); tr.setAttribute("data-name", d[1].toLowerCase());
+      tr.appendChild(h("th", "", d[1])); tr.firstChild.setAttribute("scope", "row");
+      var tdm = h("td");
+      tdm.appendChild(h("div", "hint", d[2][0]));
+      var am = h("a", "", d[2][1]); am.href = "tel:" + dial(d[2][1]); tdm.appendChild(am);
+      var tdo = h("td"); var wrap = h("div", "others");
+      d[3].forEach(function (s) {
+        var item = h("div"); item.appendChild(h("div", "hint", s[0]));
+        var a = h("a", "", s[1]); a.href = "tel:" + dial(s[1]); item.appendChild(a); wrap.appendChild(item);
+      });
+      if (!d[3].length) wrap.appendChild(h("span", "hint", "None"));
+      tdo.appendChild(wrap);
+      tr.appendChild(tdm); tr.appendChild(tdo); body.appendChild(tr);
+    });
+    $("dirFilter").addEventListener("input", function (e) {
+      var q = e.target.value.trim().toLowerCase(); var shown = 0;
+      Array.prototype.forEach.call(body.children, function (tr) {
+        var m = tr.getAttribute("data-name").indexOf(q) !== -1; tr.hidden = !m; if (m) shown++;
+      });
+      $("dirEmpty").hidden = shown !== 0;
+    });
+  }
+
+  /* ---------- activities ---------- */
+  function buildActivities() {
+    var items = [
+      ["Done", "Defined the problem", "Finding and typing the right emergency number takes time when it matters most."],
+      ["Done", "Mapped the website", "Planned the menu and pages on the whiteboard: Home, Abouts, Portfolio, Services and Contacts."],
+      ["Done", "Collected emergency numbers", "Listed numbers for " + D.length + " countries, with separate police, fire and ambulance lines where they exist."],
+      ["Done", "Built the one-tap prototype", "A large call button for the selected country, plus a personal contact button."],
+      ["Done", "Added a saved setup", "Country and contact are remembered on the device, so nothing is adjusted twice."],
+      ["Planned", "Make it an installable app", "A phone app that opens fully offline."]
+    ];
+    var g = $("actGrid");
+    items.forEach(function (it) {
+      var c = h("div", "act");
+      c.appendChild(h("span", "chip " + (it[0] === "Done" ? "done" : "next"), it[0]));
+      c.appendChild(h("h3", "", it[1])); c.appendChild(h("p", "hint", it[2])); g.appendChild(c);
+    });
+  }
+
+  /* ---------- exercises (quiz) ---------- */
+  var quiz = { qs: [], i: 0, score: 0, answered: false };
+  function newQuiz() {
+    var pool = shuffle(D.slice()).slice(0, 5);
+    quiz.qs = pool.map(function (d) {
+      var correct = d[2][1], nums = [];
+      D.forEach(function (x) { var n = x[2][1]; if (n !== correct && nums.indexOf(n) < 0) nums.push(n); });
+      var opts = shuffle([correct].concat(shuffle(nums).slice(0, 3)));
+      return { d: d, opts: opts };
+    });
+    quiz.i = 0; quiz.score = 0; quiz.answered = false; renderQuiz();
+  }
+  function renderQuiz() {
+    var box = $("quiz"); box.textContent = "";
+    if (quiz.i >= quiz.qs.length) {
+      box.appendChild(h("div", "where", "Round complete"));
+      box.appendChild(h("div", "score", quiz.score + " / " + quiz.qs.length));
+      box.appendChild(h("p", "hint", quiz.score === quiz.qs.length ? "Perfect round." : "Try another round to practice the ones you missed."));
+      var again = h("button", "primary", "New round"); again.type = "button"; again.addEventListener("click", newQuiz);
+      box.appendChild(again); return;
+    }
+    var q = quiz.qs[quiz.i], d = q.d;
+    box.appendChild(h("div", "where", "Question " + (quiz.i + 1) + " of " + quiz.qs.length));
+    box.appendChild(h("div", "qtext", "Which number do you call for " + d[2][0].toLowerCase() + " in " + d[1] + "?"));
+    var opts = h("div", "quiz-opts"); var fb = h("p", "status", ""); var next = h("button", "primary", quiz.i + 1 === quiz.qs.length ? "See score" : "Next");
+    next.type = "button"; next.hidden = true;
+    q.opts.forEach(function (n) {
+      var b = h("button", "", n); b.type = "button";
+      b.addEventListener("click", function () {
+        if (quiz.answered) return; quiz.answered = true;
+        var right = n === d[2][1]; if (right) quiz.score++;
+        Array.prototype.forEach.call(opts.children, function (x) {
+          x.disabled = true; if (x.textContent === d[2][1]) x.className = "right"; else if (x === b) x.className = "wrong";
+        });
+        fb.textContent = right ? "Correct." : "Not quite. In " + d[1] + ", " + d[2][0].toLowerCase() + " is " + d[2][1] + ".";
+        fb.className = "status " + (right ? "ok" : "warn"); next.hidden = false;
+      });
+      opts.appendChild(b);
+    });
+    next.addEventListener("click", function () { quiz.i++; quiz.answered = false; renderQuiz(); });
+    box.appendChild(opts); box.appendChild(fb); box.appendChild(next);
+  }
+
+  /* ---------- feedback ---------- */
+  function readFeedback() { try { var a = JSON.parse(localStorage.getItem(FBKEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function renderFeedback() {
+    var list = readFeedback().slice(-5).reverse(); var box = $("fbList"); box.textContent = "";
+    $("fbCard").hidden = list.length === 0;
+    list.forEach(function (f) {
+      var r = h("div", "fb"); r.appendChild(h("b", "", (f.name && String(f.name)) || "Anonymous"));
+      r.appendChild(h("p", "", String(f.msg || ""))); box.appendChild(r);
+    });
+  }
+
+  /* ---------- menu and routing ---------- */
+  function buildNav() {
+    var nav = $("mainNav");
+    GROUPS.forEach(function (g) {
+      var a = h("a", "", g[1]); a.href = "#" + g[0]; a.setAttribute("data-group", g[0]); nav.appendChild(a);
+    });
+  }
+  function route() {
+    var p = location.hash.replace("#", ""); if (!PAGES[p]) p = "home";
+    currentPage = p;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-page]"), function (el) { el.hidden = el.getAttribute("data-page") !== p; });
+    var group = null;
+    GROUPS.forEach(function (g) { if (g[2].indexOf(p) !== -1) group = g; });
+    Array.prototype.forEach.call($("mainNav").children, function (a) {
+      if (group && a.getAttribute("data-group") === group[0]) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+    var sub = $("subNav"); sub.textContent = "";
+    if (group && group[2].length > 1) {
+      sub.hidden = false;
+      group[2].forEach(function (pg) {
+        var a = h("a", "", PAGES[pg]); a.href = "#" + pg; if (pg === p) a.setAttribute("aria-current", "page"); sub.appendChild(a);
+      });
+    } else { sub.hidden = true; }
+    if (p === "contacts") renderFeedback();
+    window.scrollTo(0, 0);
+  }
+
+  function bind() {
+    $("country").addEventListener("change", function (e) { state.country = e.target.value; renderHome(); });
+    [["customLbl", "customLbl"], ["customNum", "customNum"], ["cName", "cName"], ["cNum", "cNum"]].forEach(function (p) {
+      $(p[0]).addEventListener("input", function (e) { state[p[1]] = e.target.value; renderHome(); });
+    });
+    $("form").addEventListener("submit", function (e) {
+      e.preventDefault(); var st = $("status");
+      try {
+        localStorage.setItem(KEY, JSON.stringify(state)); savedSnapshot = JSON.stringify(state);
+        renderHome(); st.textContent = "Saved"; st.className = "status ok";
+      } catch (err) { st.textContent = "Could not save here. Your browser blocked storage."; st.className = "status warn"; }
+    });
+    $("resetBtn").addEventListener("click", function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      savedSnapshot = null;
+      state = { country: defaultCountry(), customLbl: "", customNum: "", cName: "", cNum: "" };
+      syncInputs(); renderHome();
+      var st = $("status"); st.textContent = "Saved setup cleared"; st.className = "status";
+    });
+    $("copyMain").addEventListener("click", function () {
+      var c = current(); var msg = $("copyMsg");
+      var done = function () { msg.textContent = "Copied " + c.main[1]; };
+      var fail = function () { msg.textContent = "Copy is blocked here. The number is " + c.main[1] + "."; };
+      try { navigator.clipboard.writeText(c.main[1]).then(done, fail); } catch (e) { fail(); }
+    });
+    $("fbForm").addEventListener("submit", function (e) {
+      e.preventDefault(); var st = $("fbStatus"); var msg = $("fbMsg").value.trim();
+      if (!msg) { st.textContent = "Write a message first."; st.className = "status warn"; return; }
+      try {
+        var all = readFeedback(); all.push({ name: $("fbName").value.trim(), msg: msg, t: Date.now() });
+        localStorage.setItem(FBKEY, JSON.stringify(all.slice(-20)));
+        $("fbMsg").value = ""; st.textContent = "Saved on this device"; st.className = "status ok"; renderFeedback();
+      } catch (err) { st.textContent = "Could not save here. Your browser blocked storage."; st.className = "status warn"; }
+    });
+    function net() {
+      var on = navigator.onLine !== false;
+      $("net").className = "chip" + (on ? "" : " off");
+      $("netTxt").textContent = on ? "Online" : "Offline: calls still work";
+    }
+    window.addEventListener("online", net); window.addEventListener("offline", net); net();
+    window.addEventListener("hashchange", route);
+  }
+
+  buildSelect(); buildNav(); buildDirectory();
+  load(); syncInputs(); bind(); renderHome(); route();
+})();
+</script>
+
+</body>
+</html>
